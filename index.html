@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Letter For You ❤️</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Satisfy&display=swap" rel="stylesheet">
+    <style>
+        /* --- General & Variables --- */
+        :root {
+            --bg-color: #fcefee;
+            --envelope-color: #ffc8d2;
+            --envelope-flap-color: #ffb8c6;
+            --heart-color: #e91e63;
+            --letter-paper-color: #fffaf0;
+            --text-primary: #5d4037;
+            --text-heading: #d81b60;
+            --shadow-color: rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Playfair Display', serif;
+            background: radial-gradient(circle, #fff5f7, var(--bg-color));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* --- Envelope --- */
+        .envelope-wrapper {
+            position: relative;
+            cursor: pointer;
+            perspective: 1000px;
+            z-index: 10;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .envelope {
+            position: relative;
+            width: 320px;
+            height: 200px;
+            background-color: var(--envelope-color);
+            border-radius: 10px;
+            box-shadow: 0 8px 30px var(--shadow-color);
+            transition: transform 0.8s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+            transform-style: preserve-3d;
+        }
+
+        .envelope-wrapper.open .envelope {
+            transform: rotateY(180deg);
+        }
+
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background-color: var(--envelope-flap-color);
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            transform-origin: top;
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            transition: transform 0.6s 0.6s ease-in-out;
+            z-index: 12;
+        }
+
+        .envelope-wrapper.open .envelope-flap {
+            transform: rotateX(180deg);
+            transition-delay: 0s;
+        }
+        
+        .envelope-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--envelope-color);
+            border-radius: 10px;
+            z-index: 1;
+            transform: rotateY(180deg); /* Pre-rotated for the flip */
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* --- Letter Preview (inside envelope) --- */
+        .letter-preview {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: calc(100% - 10px);
+            height: calc(100% - 10px);
+            background-color: var(--letter-paper-color);
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.7s 0.8s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            transform: translateY(180px);
+            opacity: 0;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-family: 'Satisfy', cursive;
+            font-size: 1.8rem;
+            color: var(--text-primary);
+        }
+
+        .envelope-wrapper.open .letter-preview {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* --- Full Letter View --- */
+        .letter-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 90vw;
+            max-width: 600px;
+            height: 80vh;
+            transform: translate(-50%, -50%) scale(0.1);
+            opacity: 0;
+            z-index: 100;
+            background-color: var(--letter-paper-color);
+            border-radius: 10px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            animation: unfold 0.7s 0.2s forwards cubic-bezier(0.68, -0.6, 0.32, 1.6);
+        }
+
+        .letter-container.closing {
+            animation: fold 0.7s forwards cubic-bezier(0.68, -0.6, 0.32, 1.6);
+        }
+
+        @keyframes unfold {
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fold {
+            from {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+            to {
+                transform: translate(-50%, -50%) scale(0.1);
+                opacity: 0;
+            }
+        }
+
+        .letter-content {
+            position: relative;
+            padding: 40px;
+            height: 100%;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .letter-content h1 {
+            font-family: 'Satisfy', cursive;
+            font-size: 2.5rem;
+            color: var(--text-heading);
+            text-align: center;
+            margin: 0 0 20px 0; /* FIX: Added margin-top: 0 to prevent issues */
+        }
+
+        .letter-content p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2.5rem;
+            color: #aaa;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .close-btn:hover {
+            color: var(--text-primary);
+        }
+
+        /* --- Prompt Text --- */
+        .click-to-open-text {
+            position: absolute;
+            bottom: -50px;
+            width: 100%;
+            text-align: center;
+            color: var(--text-heading);
+            font-family: 'Satisfy', cursive;
+            font-size: 1.5rem;
+            animation: bounce 2s infinite;
+            transition: opacity 0.3s;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+    </style>
+</head>
+<body>
+    <canvas id="particle-canvas"></canvas>
+
+    <div id="envelopeWrapper" class="envelope-wrapper" role="button" tabindex="0" aria-label="Click to open the love letter">
+        <div class="envelope">
+            <div class="envelope-back">
+                <div id="letterPreview" class="letter-preview">To My Love...</div>
+            </div>
+            <div class="envelope-flap"></div>
+            <div class="heart"></div>
+        </div>
+        <div id="clickText" class="click-to-open-text">Click to open</div>
+    </div>
+
+    <div id="fullLetter" class="letter-container hidden">
+        <div class="letter-content">
+            <button id="closeBtn" class="close-btn" aria-label="Close the letter">&times;</button>
+            <h1>Happy Girlfriend’s Day, My Dearest Love,</h1>
+            <p>
+                If you are reading this it means you have found the little secret, i didnt want to let this day pass without doing something a bit special something from the heart to show you just how much you mean to me.
+            </p>
+            <p>
+                Since that moment you stepped into my life everything has felt lighter, brighter, and much more alive you literally bring so much joy into my life its in your cuteie little laugh and your kindness, the way you care, AND your voice is my fucking favorite sound it calms me and excites me, and it stays in my head like a song like i never want to stop hearing it.
+            </p>
+            <p>
+                You have this way about you… you are cute without even trying, sweet in a way that is very rare, and your personality GOD I love everything about it, you are funny, thoughtful, gentle, strong, cute. I could go on and on forever, Honestly, you are everything to me.
+            </p>
+            <p>
+                You are not just my girlfriend, you are my peace, my joy, my heart, Thank you for the quiet moments that mean everything, and for every conversation, every memory we have made together. I celebrate you today, and i will keep celebrating you every day after this, I love you more than I could ever put into words, But I promise i will keep trying because you deserve to hear it a million times over.
+            </p>
+            <p style="text-align: right; margin-top: 30px; font-family: 'Satisfy', cursive; font-size: 1.8rem;">
+                Forever yours,<br>
+                Ali
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Elements ---
+            const envelopeWrapper = document.getElementById('envelopeWrapper');
+            const letterPreview = document.getElementById('letterPreview');
+            const fullLetter = document.getElementById('fullLetter');
+            const clickText = document.getElementById('clickText');
+            const closeBtn = document.getElementById('closeBtn');
+
+            let isAnimating = false;
+
+            // --- Particle Effect ---
+            const canvas = document.getElementById('particle-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            let particles = [];
+
+            const particleConfig = {
+                count: 50,
+                speed: 0.5,
+                size: 10,
+                colors: ['#ffc2c2', '#ffb3b3', '#fde4e4', '#e91e63'],
+                char: '♥'
+            };
+
+            const createParticles = () => {
+                particles = [];
+                for (let i = 0; i < particleConfig.count; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        size: Math.random() * particleConfig.size + 5,
+                        speed: Math.random() * particleConfig.speed + 0.2,
+                        color: particleConfig.colors[Math.floor(Math.random() * particleConfig.colors.length)],
+                        opacity: Math.random() * 0.5 + 0.3
+                    });
+                }
+            };
+
+            const animateParticles = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.y -= p.speed;
+                    if (p.y < -p.size) {
+                        p.y = canvas.height + p.size;
+                        p.x = Math.random() * canvas.width;
+                    }
+                    ctx.globalAlpha = p.opacity;
+                    ctx.fillStyle = p.color;
+                    ctx.font = `${p.size * 2}px Arial`;
+                    ctx.fillText(particleConfig.char, p.x, p.y);
+                });
+                requestAnimationFrame(animateParticles);
+            };
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                createParticles();
+            });
+
+            createParticles();
+            animateParticles();
+
+            // --- Interaction Logic ---
+            const openEnvelope = () => {
+                if (isAnimating) return;
+                isAnimating = true;
+
+                envelopeWrapper.classList.add('open');
+                clickText.style.opacity = '0';
+
+                setTimeout(() => {
+                    letterPreview.style.cursor = 'pointer';
+                    isAnimating = false;
+                }, 1400); // Duration of flap + letter slide
+            };
+
+            const unfoldLetter = () => {
+                if (isAnimating) return;
+                isAnimating = true;
+
+                // Fade out envelope
+                envelopeWrapper.style.opacity = '0';
+
+                setTimeout(() => {
+                    envelopeWrapper.classList.add('hidden');
+                    fullLetter.classList.remove('hidden');
+                    isAnimating = false;
+                }, 500); // Sync with opacity transition
+            };
+            
+            const closeLetter = () => {
+                if(isAnimating) return;
+                isAnimating = true;
+
+                fullLetter.classList.add('closing');
+
+                setTimeout(() => {
+                    fullLetter.classList.add('hidden');
+                    fullLetter.classList.remove('closing');
+
+                    envelopeWrapper.classList.remove('hidden');
+                    // Use a slight delay to ensure the element is visible before starting the transition
+                    requestAnimationFrame(() => {
+                        envelopeWrapper.style.opacity = '1';
+                        envelopeWrapper.classList.remove('open');
+                        clickText.style.opacity = '1';
+                    });
+                    
+                    isAnimating = false;
+                }, 700); // Sync with 'fold' animation
+            };
+            
+            // --- Event Listeners ---
+            envelopeWrapper.addEventListener('click', openEnvelope);
+            letterPreview.addEventListener('click', unfoldLetter);
+            closeBtn.addEventListener('click', closeLetter);
+
+            // Accessibility: allow opening with Enter key
+            envelopeWrapper.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    openEnvelope();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
