@@ -268,7 +268,7 @@
         </div>
     </div>
 
-    <audio src="daylight.mp3" autoplay loop></audio>
+    <audio autoplay loop src="daylight.mp3"></audio>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -398,16 +398,5 @@
             });
         });
     </script>
-
-    <script>
-  const music = document.getElementById('bgMusic');
-  const playBtn = document.getElementById('playMusicBtn');
-
-  playBtn.addEventListener('click', () => {
-    music.play();
-    playBtn.style.display = 'none'; // Hide button after clicking
-  });
-</script>
-
 </body>
 </html>
