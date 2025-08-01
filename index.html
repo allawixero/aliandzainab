@@ -268,6 +268,11 @@
         </div>
     </div>
 
+    <button id="playMusicBtn">Play Music</button>
+
+    <audio id="bgMusic" src="music.mp3" preload="auto"></audio>
+
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- Elements ---
@@ -396,5 +401,16 @@
             });
         });
     </script>
+
+    <script>
+  const music = document.getElementById('bgMusic');
+  const playBtn = document.getElementById('playMusicBtn');
+
+  playBtn.addEventListener('click', () => {
+    music.play();
+    playBtn.style.display = 'none'; // Hide button after clicking
+  });
+</script>
+
 </body>
 </html>
